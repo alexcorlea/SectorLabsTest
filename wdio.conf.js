@@ -194,14 +194,22 @@ exports.config = {
 		$('//div[@id=\'filterItem-stepper-min_bedrooms-0\']//button[2]').click()
 		}
 	
+		//XPath: get buton text because it will change
+		var showBtn = $('//button[@class=\'_m095vcq\']')
+		var showBtnInitialText = $('//button[@class=\'_m095vcq\']').getText()
+		
 		//CSS: click swimming pool
 		$('#filterItem-checkbox-amenities-7').click()
-		browser.pause(1000);
 		
-		//Xpath: show stays
-		$('//button[@class=\'_m095vcq\']').click()
-		browser.pause(1000);
-})
+		//Xpath: show stays after waiting for buton text to change
+		showBtn.waitUntil(function () {
+        return this.getText() !== showBtnInitialText
+		})
+		showBtn.click()
+		
+		//wait for page to refresh
+		browser.pause(1500)
+	})
     },
     /**
      * Runs before a WebdriverIO command gets executed.

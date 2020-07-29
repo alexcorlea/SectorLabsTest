@@ -1,21 +1,29 @@
 describe('Search results', () => {
 	beforeEach( function() {
-		var waitForMe = 600;
+		var waitForMe = 10000;
 		browser.url('/')
-		//CSS: enter location Rome
-		$('#bigsearch-query-detached-query').setValue('Rome')
 		
-		//wait for dropdown and choose first from dropdown
-		$('[class=\'_1xq16jy focus-visible\']').waitForExist({ timeout: 5000 })
-		browser.pause(waitForMe)		
+		//CSS: enter location Rome
+		$('#bigsearch-query-detached-query').waitForDisplayed({timeout: waitForMe })
+		$('#bigsearch-query-detached-query').click()
+		browser.keys(['R','o','m','e'])
+		
+		//XPath: select first suggestion
+		$('[aria-labelledby=\'predictions-\']').waitForDisplayed({ timeout: waitForMe })
 		browser.keys(['ArrowDown','Enter'])
 		
 		//XPath: enter checkin and checkout dates
 		var checkInFormatedDate = (moment().add(7, 'days').format('MMMM D'))
 		var checkOutFormatedDate = (moment().add(14, 'days').format('MMMM D'))
-		browser.pause(waitForMe) //wait for calendar datepicker
-		$('//td[contains(@aria-label,\'' + checkInFormatedDate + '\')]').click()
-		$('//td[contains(@aria-label,\'' + checkOutFormatedDate + '\')]').click()
+		var el1 = $('//td[contains(@aria-label,\'' + checkInFormatedDate + '\')]')
+		var el2 = $('//td[contains(@aria-label,\'' + checkOutFormatedDate + '\')]')
+		
+		$('[data-testid=\'structured-search-input-field-dates-panel\']').waitForDisplayed({ timeout: waitForMe })
+				
+		el1.waitForDisplayed()
+		el1.click()
+		el2.waitForDisplayed()
+		el2.click()
 				
 		//CSS: click for guests
 		$('[data-testid=structured-search-input-field-guests-button]').click()
@@ -29,8 +37,8 @@ describe('Search results', () => {
 		//XPath: click search
 		$('//button[@class=\'_1mzhry13\']').click()
 		
-		//Partial Link: sync wait for the search page, but max 10 seconds
-		$('div*=Add a place or address to the map').waitForDisplayed({timeout: 10000 })
+		//Partial Link: sync wait for the search page
+		$('div*=Add a place or address to the map').waitForDisplayed({timeout: waitForMe })
 	})
 	
 	it('should match the search criteria', () => {
@@ -57,7 +65,7 @@ describe('Search results', () => {
 	})
 	
 	it('should have 5 bedrooms because I want them all', () => {
-		//epply extra filters defined in a custom function in wdio.conf.js before hook
+		//apply extra filters defined in a custom function in wdio.conf.js before hook
 		browser.applyExtraFilters()
 		
 		//Element with partial text: get all accomodations' display area from this page
@@ -74,9 +82,7 @@ describe('Search results', () => {
 	it('should show me the pool', () => {
 		//apply the extra filters defined in a custom function in wdio.conf.js before hook
 		browser.applyExtraFilters()
-		
 		//XPath: click the first result, will open a new tab
-		browser.pause(500)
 		$('[class=_gjfol0').click()
 		
 		//switch to new window/tab 
@@ -84,15 +90,12 @@ describe('Search results', () => {
 		
 		//CSS: click Show all amenities, first of three same-class buttons on the page
 		$('[class=_13e0raay]').click()
-		browser.pause(400)
-		//browser.debug()
 		
+		//XPath: wait for amenities display
+		$('[class=_1n4z1hs]').waitForDisplayed()
+		
+		//XPath: check pool
 		expect($('//div[@class=\'_vzrbjl\'][contains(text(),\'Pool\')]').isDisplayed(), 'Pool was not an amenity of the slected property').to.be.true
-		
-		//close the extra tab
-		browser.closeWindow()
-		//switch to new window/tab 
-		browser.switchToWindow(browser.getWindowHandles()[0])
 	})
 	
 	it('shows nicely on map', () => {
@@ -106,18 +109,22 @@ describe('Search results', () => {
 		//element not highlighted
 		expect((elem.getCSSProperty('background-color').value), "element does not appear normal on map").to.include('rgb(255,255,255)')
 		
+		//XPath: click to close annoying info message overlay
+		$('[class=_1eh0dqc]').click()
+		
 		//CSS: mouse hover over the first accomodation
 		$('[class=_gjfol0]').moveTo()
 		
 		//element highlighted
-		browser.pause(1000) //background color change is animated, takes a little while
+		browser.pause(2000)
 		expect((elem.getCSSProperty('background-color').value), "element does not appear highlighted on map").to.not.include('rgb(255,255,255)')
 		
-		//click elem on map
+		//click highlighted elem on map
 		elem.click()
-		
 		//test the property name is the same on map as in list
-		expect($('[class=_v96gnbz]').getText(),'not the same property name in the minimap').to.equal($('[class=_1c2n35az]').getText())
+		console.log($('[class=_1q6k59c]').$('[class=_v96gnbz').getText())
+		
+		expect($('[class=_1q6k59c]').$('[class=_v96gnbz').getText(),'not the same property name in the minimap').to.equal($('[class=_1c2n35az]').getText())
 		
 		//CSS: extract minimap price using same logic as above
 		var minimapPrice = $('[class=_1p7iugi]').getText().split('\n').pop().match(/\d+/)[0]
